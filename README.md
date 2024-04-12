@@ -7,7 +7,7 @@
 ````lua
 local client = vim.lsp.start_client({
   name = "go_lsp",
-  cmd = { "/Users/bhatraj/pgm files/my projects/lsp_go/main" },
+  cmd = { "/path/to/your/go_main/executable" },
 })
 
 if not client then
