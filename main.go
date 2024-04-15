@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"io"
 	"log"
 	"lsp/analysis"
 	"lsp/lsp"
@@ -18,6 +19,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Split(rpc.Split)
 	state := analysis.NewState()
+	writer := os.Stdout
 	for scanner.Scan() {
 		msg := scanner.Bytes()
 		method, content, err := rpc.Decode_message(msg)
@@ -25,11 +27,11 @@ func main() {
 			logger.Printf("We got this error: %s\n", err)
 			continue
 		}
-		handleMessage(logger, state, method, content)
+		handleMessage(logger, writer, state, method, content)
 	}
 }
 
-func handleMessage(logger *log.Logger, state analysis.State, method string, content []byte) {
+func handleMessage(logger *log.Logger, writer io.Writer, state analysis.State, method string, content []byte) {
 	logger.Printf("Received method: %s\n", method)
 
 	switch method {
@@ -42,10 +44,7 @@ func handleMessage(logger *log.Logger, state analysis.State, method string, cont
 		logger.Printf("Connected to %s \t %s", request.Params.ClientInfo.Name, request.Params.ClientInfo.Version)
 		// reply
 		msg := lsp.NewinitializeResponse(request.ID)
-		reply := rpc.Encode_message(msg)
-		writer := os.Stdout
-		writer.Write([]byte(reply))
-		logger.Println("reply sent")
+		writeResponse(writer, msg)
 		// didOpen
 	case "textDocument/didOpen":
 		var request lsp.DidOpenTextDocumentNotification
@@ -68,7 +67,22 @@ func handleMessage(logger *log.Logger, state analysis.State, method string, cont
 		for _, change := range request.Params.ContentChange {
 			state.UpdateDocument(request.Params.TextDocument.URI, change.Text)
 		}
+	case "textDocument/hover":
+		var request lsp.HoverRequest
+		// content is still in json format, only header was unmarshalled in rpc.Decode_message
+		if err := json.Unmarshal(content, &request); err != nil {
+			logger.Printf("inside hover : could not unmarshal: %s\n", err)
+		}
+		// create a response
+		response := state.Hover(request.ID, request.Params.TextDocument.URI, request.Params.Position)
+		// write it back
+		writeResponse(writer, response)
 	}
+}
+
+func writeResponse(writer io.Writer, msg any) {
+	reply := rpc.Encode_message(msg)
+	writer.Write([]byte(reply))
 }
 
 func getLogger(filename string) *log.Logger {
