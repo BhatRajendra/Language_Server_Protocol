@@ -1,6 +1,0 @@
-[LSP]2024/04/12 18:50:08 main.go:16: init
-[LSP]2024/04/12 18:50:08 main.go:31: Received method: initialize
-[LSP]2024/04/12 18:50:08 main.go:40: Connected to Neovim 	 0.9.4
-[LSP]2024/04/12 18:50:08 main.go:45: reply sent
-[LSP]2024/04/12 18:50:08 main.go:31: Received method: initialized
-[LSP]2024/04/12 18:54:19 main.go:31: Received method: shutdown

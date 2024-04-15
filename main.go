@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"lsp/lsp"
+	"lsp/lsp/analysis"
 	"lsp/rpc"
 	"os"
 )
@@ -16,6 +17,7 @@ func main() {
 	logger.Println("init")
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Split(rpc.Split)
+	state := analysis.NewState()
 	for scanner.Scan() {
 		msg := scanner.Bytes()
 		method, content, err := rpc.Decode_message(msg)
@@ -23,11 +25,11 @@ func main() {
 			logger.Printf("We got this error: %s\n", err)
 			continue
 		}
-		handleMessage(logger, method, content)
+		handleMessage(logger, state, method, content)
 	}
 }
 
-func handleMessage(logger *log.Logger, method string, content []byte) {
+func handleMessage(logger *log.Logger, state analysis.State, method string, content []byte) {
 	logger.Printf("Received method: %s\n", method)
 
 	switch method {
@@ -44,6 +46,15 @@ func handleMessage(logger *log.Logger, method string, content []byte) {
 		writer := os.Stdout
 		writer.Write([]byte(reply))
 		logger.Println("reply sent")
+	case "textDocument/didOpen":
+		var request lsp.DidOpenTextDocumentNotification
+		// content is still in json format, only header was unmarshalled in rpc.Decode_message
+		if err := json.Unmarshal(content, &request); err != nil {
+			logger.Printf("could not unmarshal: %s\n", err)
+		}
+		logger.Printf("Connected to %s \t %s", request.Params.TextDocument.URI, request.Params.TextDocument.Text)
+		// when a new doc is openend...we put it in analysis.state
+		state.OpenDocument(request.Params.TextDocument.URI, request.Params.TextDocument.Text)
 	}
 }
 
