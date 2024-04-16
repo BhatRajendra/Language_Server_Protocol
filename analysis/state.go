@@ -36,3 +36,27 @@ func (s *State) Hover(id int, URI string, pos lsp.Position) lsp.HoverResponse {
 		},
 	}
 }
+
+func (s *State) Definition(id int, URI string, pos lsp.Position) lsp.DefinitionResponse {
+	// in real life it worlds would be more complex
+	// in real life it would show or go to the Definition
+	return lsp.DefinitionResponse{
+		Response: lsp.Response{
+			RPC: "2.0",
+			ID:  &id,
+		},
+		Result: lsp.Location{
+			URI: URI,
+			Range: lsp.Range{
+				Start: lsp.Position{
+					Line:      pos.Line - 2,
+					Character: 0,
+				},
+				End: lsp.Position{
+					Line:      pos.Line - 2,
+					Character: 0,
+				},
+			},
+		},
+	}
+}

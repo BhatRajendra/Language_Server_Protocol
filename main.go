@@ -11,8 +11,6 @@ import (
 	"os"
 )
 
-// TODO: uncomment lsp server in nvim config while working on this
-
 func main() {
 	logger := getLogger("./log.txt")
 	logger.Println("init")
@@ -75,6 +73,16 @@ func handleMessage(logger *log.Logger, writer io.Writer, state analysis.State, m
 		}
 		// create a response
 		response := state.Hover(request.ID, request.Params.TextDocument.URI, request.Params.Position)
+		// write it back
+		writeResponse(writer, response)
+	case "textDocument/definition":
+		var request lsp.DefinitionRequest
+		// content is still in json format, only header was unmarshalled in rpc.Decode_message
+		if err := json.Unmarshal(content, &request); err != nil {
+			logger.Printf("inside Defition : could not unmarshal: %s\n", err)
+		}
+		// create a response
+		response := state.Definition(request.ID, request.Params.TextDocument.URI, request.Params.Position)
 		// write it back
 		writeResponse(writer, response)
 	}
