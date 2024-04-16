@@ -85,6 +85,16 @@ func handleMessage(logger *log.Logger, writer io.Writer, state analysis.State, m
 		response := state.Definition(request.ID, request.Params.TextDocument.URI, request.Params.Position)
 		// write it back
 		writeResponse(writer, response)
+	case "textDocument/codeAction":
+		var request lsp.CodeActionRequest
+		// content is still in json format, only header was unmarshalled in rpc.Decode_message
+		if err := json.Unmarshal(content, &request); err != nil {
+			logger.Printf("inside codeAction : could not unmarshal: %s\n", err)
+		}
+		// create a response
+		response := state.TextDocumentCodeAction(request.ID, request.Params.TextDocument.URI)
+		// write it back
+		writeResponse(writer, response)
 	}
 }
 

@@ -3,6 +3,7 @@ package analysis
 import (
 	"fmt"
 	"lsp/lsp"
+	"strings"
 )
 
 type State struct {
@@ -58,5 +59,53 @@ func (s *State) Definition(id int, URI string, pos lsp.Position) lsp.DefinitionR
 				},
 			},
 		},
+	}
+}
+
+func (s *State) TextDocumentCodeAction(id int, URI string) lsp.TextDocumentCodeActionResponse {
+	text := s.Documents[URI]
+	actions := []lsp.CodeAction{}
+	for row, line := range strings.Split(text, "\n") {
+		idx := strings.Index(line, "VS Code")
+		if idx >= 0 {
+			replaceChange := map[string][]lsp.TextEdit{}
+			replaceChange[URI] = []lsp.TextEdit{
+				{
+					Range:   LineRange(row, idx, idx+len("VS Code")),
+					NewText: "I can change this bit of text",
+				},
+			}
+			actions = append(actions, lsp.CodeAction{
+				Title: "Override VS Code",
+				Edit:  &lsp.WorkspaceEdit{Changes: replaceChange},
+			})
+
+			censorChange := map[string][]lsp.TextEdit{}
+			censorChange[URI] = []lsp.TextEdit{
+				{
+					Range:   LineRange(row, idx, idx+len("VS Code")),
+					NewText: "VS C**E",
+				},
+			}
+			actions = append(actions, lsp.CodeAction{
+				Title: "Censor VS Code",
+				Edit:  &lsp.WorkspaceEdit{Changes: censorChange},
+			})
+		}
+	}
+	response := lsp.TextDocumentCodeActionResponse{
+		Response: lsp.Response{
+			RPC: "2.0",
+			ID:  &id,
+		},
+		Result: actions,
+	}
+	return response
+}
+
+func LineRange(line, start, end int) lsp.Range {
+	return lsp.Range{
+		Start: lsp.Position{Line: line, Character: start},
+		End:   lsp.Position{Line: line, Character: end},
 	}
 }
