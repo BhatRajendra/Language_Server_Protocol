@@ -79,7 +79,6 @@ func (s *State) TextDocumentCodeAction(id int, URI string) lsp.TextDocumentCodeA
 				Title: "Override VS Code",
 				Edit:  &lsp.WorkspaceEdit{Changes: replaceChange},
 			})
-
 			censorChange := map[string][]lsp.TextEdit{}
 			censorChange[URI] = []lsp.TextEdit{
 				{
@@ -99,6 +98,31 @@ func (s *State) TextDocumentCodeAction(id int, URI string) lsp.TextDocumentCodeA
 			ID:  &id,
 		},
 		Result: actions,
+	}
+	return response
+}
+
+func (s *State) TextDocumentCompletion(id int, URI string) lsp.CompletionResponse {
+	// ask you static analysis tools to figure out the best TextDocumentCompletion
+	// here the response is very very very minimal
+	items := []lsp.CompletionItem{
+		{
+			Label:         "Neovim BTW",
+			Detail:        "Very cool editor",
+			Documentation: "It's fun to write in Nvim and all credit goes to TJ DeVries",
+		},
+		{
+			Label:         "I am Rajendra",
+			Detail:        "Amatuer programmer",
+			Documentation: "but stillllll....it's fun to programme stuff",
+		},
+	}
+	response := lsp.CompletionResponse{
+		Response: lsp.Response{
+			RPC: "2.0",
+			ID:  &id,
+		},
+		Result: items,
 	}
 	return response
 }
