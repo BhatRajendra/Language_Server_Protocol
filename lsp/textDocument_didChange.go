@@ -13,7 +13,7 @@ type DidChangeTextDocumentParams struct {
 	 */
 	TextDocument VersionedTextDocumentIdentifier `json:"textDocument"`
 	// The actual content changes.
-	ContentChange []TextDocumentContentChangeEvent `json:"contentChange"`
+	ContentChange []TextDocumentContentChangeEvent `json:"contentChanges"`
 }
 
 type TextDocumentContentChangeEvent struct {

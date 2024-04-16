@@ -38,6 +38,7 @@ func handleMessage(logger *log.Logger, writer io.Writer, state analysis.State, m
 		// content is still in json format, only header was unmarshalled in rpc.Decode_message
 		if err := json.Unmarshal(content, &request); err != nil {
 			logger.Printf("could not unmarshal: %s\n", err)
+			return
 		}
 		logger.Printf("Connected to %s \t %s", request.Params.ClientInfo.Name, request.Params.ClientInfo.Version)
 		// reply
@@ -49,27 +50,43 @@ func handleMessage(logger *log.Logger, writer io.Writer, state analysis.State, m
 		// content is still in json format, only header was unmarshalled in rpc.Decode_message
 		if err := json.Unmarshal(content, &request); err != nil {
 			logger.Printf("inside didOpen : could not unmarshal: %s\n", err)
+			return
 		}
 		logger.Printf("Opened :  to %s", request.Params.TextDocument.URI)
 		// when a new doc is openend...we put it in analysis.state
-		state.OpenDocument(request.Params.TextDocument.URI, request.Params.TextDocument.Text)
+		diagnostics := state.OpenDocument(request.Params.TextDocument.URI, request.Params.TextDocument.Text)
+		writeResponse(writer, lsp.PublishDiagnosticsNotification{
+			Notification: lsp.Notification{RPC: "2.0", Method: "textDocument/publishDiagnostics"},
+			Params: lsp.PublishDiagnosticsParams{
+				URI:         request.Params.TextDocument.URI,
+				Diagnostics: diagnostics,
+			},
+		})
 		// didChange
 	case "textDocument/didChange":
 		var request lsp.TextDocumentDidChangeNotification
 		// content is still in json format, only header was unmarshalled in rpc.Decode_message
 		if err := json.Unmarshal(content, &request); err != nil {
 			logger.Printf("inside didChange : could not unmarshal: %s\n", err)
+			return
 		}
 		logger.Printf("Changed :  to %s", request.Params.TextDocument.URI)
-		// when a new doc is openend...we put it in analysis.state
 		for _, change := range request.Params.ContentChange {
-			state.UpdateDocument(request.Params.TextDocument.URI, change.Text)
+			diagnostics := state.UpdateDocument(request.Params.TextDocument.URI, change.Text)
+			writeResponse(writer, lsp.PublishDiagnosticsNotification{
+				Notification: lsp.Notification{RPC: "2.0", Method: "textDocument/publishDiagnostics"},
+				Params: lsp.PublishDiagnosticsParams{
+					URI:         request.Params.TextDocument.URI,
+					Diagnostics: diagnostics,
+				},
+			})
 		}
 	case "textDocument/hover":
 		var request lsp.HoverRequest
 		// content is still in json format, only header was unmarshalled in rpc.Decode_message
 		if err := json.Unmarshal(content, &request); err != nil {
 			logger.Printf("inside hover : could not unmarshal: %s\n", err)
+			return
 		}
 		// create a response
 		response := state.Hover(request.ID, request.Params.TextDocument.URI, request.Params.Position)
@@ -80,6 +97,7 @@ func handleMessage(logger *log.Logger, writer io.Writer, state analysis.State, m
 		// content is still in json format, only header was unmarshalled in rpc.Decode_message
 		if err := json.Unmarshal(content, &request); err != nil {
 			logger.Printf("inside Defition : could not unmarshal: %s\n", err)
+			return
 		}
 		// create a response
 		response := state.Definition(request.ID, request.Params.TextDocument.URI, request.Params.Position)
@@ -90,6 +108,7 @@ func handleMessage(logger *log.Logger, writer io.Writer, state analysis.State, m
 		// content is still in json format, only header was unmarshalled in rpc.Decode_message
 		if err := json.Unmarshal(content, &request); err != nil {
 			logger.Printf("inside codeAction : could not unmarshal: %s\n", err)
+			return
 		}
 		// create a response
 		response := state.TextDocumentCodeAction(request.ID, request.Params.TextDocument.URI)
@@ -100,6 +119,7 @@ func handleMessage(logger *log.Logger, writer io.Writer, state analysis.State, m
 		// content is still in json format, only header was unmarshalled in rpc.Decode_message
 		if err := json.Unmarshal(content, &request); err != nil {
 			logger.Printf("inside completion : could not unmarshal: %s\n", err)
+			return
 		}
 		// create a response
 		response := state.TextDocumentCompletion(request.ID, request.Params.TextDocument.URI)

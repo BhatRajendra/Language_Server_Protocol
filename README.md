@@ -24,4 +24,4 @@ vim.api.nvim_create_autocmd("FileType", {
 ```
 
 //example for code Action method
-"I used to use VS Code, but now I use NeoVim"
+"I used to use I can change this bit of text, but now I use Neovim"
